@@ -1,0 +1,51 @@
+vagrant used sudo to do `/bin/sh` on 2021-08-21 17:09:55
+vagrant used sudo to do `/usr/local/bin/bash -l` on 2021-08-21 17:09:55
+vagrant used sudo to do `/bin/sh` on 2021-08-21 17:09:55
+vagrant used sudo to do `/bin/sh` on 2021-08-21 17:09:55
+vagrant used sudo to do `/usr/local/bin/bash -l` on 2021-08-21 17:09:59
+vagrant used sudo to do `/usr/local/bin/bash -l` on 2021-08-21 17:09:59
+vagrant used sudo to do `/usr/local/bin/bash -l` on 2021-08-21 17:09:59
+vagrant used sudo to do `/usr/local/bin/bash -l` on 2021-08-21 17:09:59
+vagrant used sudo to do `/usr/local/bin/bash -l` on 2021-08-21 17:09:59
+vagrant used sudo to do `/usr/local/bin/bash -l` on 2021-08-21 17:09:59
+1
+vagrant used sudo to do `/bin/cp /var/log/auth.log /vagrant/ccw/` on 2021-08-21 17:21:06
+vagrant1 used sudo to do `/bin/cp /var/log/auth.log /vagrant/v1/` on 2021-08-21 17:21:07
+vagrant2 used sudo to do `/bin/cp /var/log/auth.log /vagrant/v2/` on 2021-08-21 17:21:08
+vagrant failed to log in 3 times
+vagrant1 failed to log in 4 times
+vagrant2 failed to log in 1 times
+10.0.2.21 failed to log in 2 times
+10.0.2.22 failed to log in 1 times
+10.0.2.23 failed to log in 1 times
+10.0.2.24 failed to log in 1 times
+10.0.2.2 failed to log in 3 times
+xizhen used sudo to do `/bin/cat /var/log/auth.log` on 2021-09-23 21:46:20
+xizhen used sudo to do `/bin/csh` on 2021-09-23 21:46:52
+xizhen used sudo to do `/usr/local/sbin/visudo` on 2021-09-23 21:48:00
+xizhen used sudo to do `/bin/cat /var/log/auth.log` on 2021-09-23 21:50:32
+2
+xizhen used sudo to do `/bin/cat /var/log/auth.log` on 2021-10-01 22:29:40
+xizhen failed to log in 14 times
+10.2.11.22 failed to log in 1 times
+10.2.11.23 failed to log in 1 times
+10.2.11.25 failed to log in 1 times
+10.2.11.17 failed to log in 1 times
+10.10.10.10 failed to log in 3 times
+10.2.11.4 failed to log in 6 times
+10.2.11.6 failed to log in 4 times
+2
+xizhen used sudo to do `/bin/cat /var/log/auth.log` on 2021-10-01 22:18:27
+2
+xizhen used sudo to do `/bin/cat /var/log/auth.log` on 2021-10-01 22:29:51
+1
+1
+xizhen used sudo to do `/bin/cat /var/log/auth.log` on 2021-10-01 23:12:37
+xizhen used sudo to do `/usr/sbin/pkg install vim-con 2021-10-02 01:53:37
+xizhen failed to log in 16 times
+10.2.11.24 failed to log in 3 times
+10.11.12.13 failed to log in 1 times
+10.2.11.27 failed to log in 3 times
+10.2.11.15 failed to log in 1 times
+10.2.11.7 failed to log in 2 times
+10.2.11.8 failed to log in 7 times
