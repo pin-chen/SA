@@ -5,7 +5,6 @@ CANCLE=1
 ALL=3
 Broadcast=0
 ESC=255
-
 delete(){
 	rm -r $temp
 	return
@@ -15,7 +14,14 @@ trap_ctrl_c(){
 	delete
 	exit 2
 }
-trap "trap_ctrl_c" 2
+Esc(){
+	if [ $1 -eq $ESC ]; then
+		echo "Esc." >&2
+		delete
+		exit 1
+	fi
+}
+trap "trap_ctrl_c" SIGINT
 Entrance_Page(){
 	while : 
 	do
@@ -23,24 +29,26 @@ Entrance_Page(){
 			1 "POST ANNOUNCENT" \
 			2 "USER LIST" 2> $temp/tmp_page.txt
 		result=$?
-		if [ $result -eq $ESC ]; then
-			echo "Esc." >&2
-			delete
-			exit 1
-		fi
+		Esc $result
 		if [ $result -eq $CANCLE ]; then
-			return
+			break
+		elif [ $result -eq $OK ]; then
+			select=$(cat $temp/tmp_page.txt)
+			case $select in
+				1)
+					Announcement
+					;;
+				2)
+					Users_list
+					;;
+			esac
+		elif [ $result -eq $ALL ]; then
+			dialog --title "Bonus" --msgbox "Not Finish yet." 29 70
+			result=$?
+			Esc $result
 		fi
-		select=$(cat $temp/tmp_page.txt)
-		case $select in
-			1)
-				Announcement
-				;;
-			2)
-				Users_list
-				;;
-		esac
 	done
+	return
 }
 Announcement(){
 	Broadcast=0
@@ -49,13 +57,9 @@ Announcement(){
 	do
 		dialog --title 'POST ANNOUNCENT' --extra-button --extra-label "ALL" --checklist 'Please choose who you want to post' 29 70 30 `cat $temp/user_list.txt`  2> $temp/select_user.txt
 		result=$?
-		if [ $result -eq $ESC ]; then
-			echo "Esc." >&2
-			delete
-			exit 1
-		fi
+		Esc $result
 	 	if [ $result -eq $CANCLE ]; then
-			return
+			break
 		elif [ $result -eq $ALL ]; then
 			Broadcast=1
 			Typeing_MSG
@@ -64,72 +68,46 @@ Announcement(){
 			test -s $temp/select_user.txt
 			file_no_data=$?
 			if [ $file_no_data -eq 1 ]; then
-				while :
-				do
-					dialog --title "POST ANNOUNCENT" --msgbox "You does not select any user." 29 70
-					result=$?
-					if [ $result -eq $ESC ]; then
-						echo "Esc." >&2
-						delete
-						exit 1
-					fi
-					if [ $result -eq $OK ]; then
-						break
-					fi
-					break
-				done
+				dialog --title "POST ANNOUNCENT" --msgbox "You does not select any user." 29 70
+				result=$?
+				Esc $result
 			elif [ $file_no_data -eq 0 ]; then
 				Typeing_MSG
 				break
 			fi
 		fi
-		
-		
 	done
+	return
 }
 Typeing_MSG(){
 	while :
 	do
 		dialog --title "Post an announcement" --inputbox "Enter your meesages:" 10 50 2> $temp/MSG.txt
 		result=$?
-		if [ $result -eq $ESC ]; then
-			echo "Esc." >&2
-			delete
-			exit 1
-		fi
+		Esc $result
 		if [ $result -eq $OK ]; then
 			test -s $temp/MSG.txt
 			file_no_data=$?
 			if [ $file_no_data -eq 1 ]; then
-				while :
-				do
-					dialog --title "Post an announcement" --msgbox "You does not type anything." 29 70
-					result=$?
-					if [ $result -eq $ESC ]; then
-						echo "Esc." >&2
-						delete
-						exit 1
-					fi
-					if [ $result -eq $OK ]; then
-						break
-					fi
-					break
-				done
+				dialog --title "Post an announcement" --msgbox "You does not type anything." 29 70
+				result=$?
+				Esc $result
 			elif [ $Broadcast -eq 1 ]; then
 				sudo wall $temp/MSG.txt
-				return
+				break
 			else
 				for user in `cat $temp/select_user.txt`; do
 					USER=`id -nu $user`
 					MSG=`cat $temp/MSG.txt`
 					echo $MSG | sudo write "$USER"
 				done
-				return
+				break
 			fi
 		elif [ $result -eq $CANCLE ]; then
-			return
+			break
 		fi
 	done
+	return
 }
 Users_list(){
 	cat /etc/passwd | awk '{split ( $0, a, ":" ); if(a[2] ~/\*/) print a[1] " " a[3] " " $NF}' | awk '{if($NF ~/.*nologin/);else print $1 " "}'| awk '{printf("%s",$0)}' > $temp/user_Panel.txt
@@ -152,29 +130,26 @@ Users_list(){
 	do
 		dialog --title "" --ok-label "SELECT" --cancel-label "EXIT" --menu "User Info Pannel"  29 70 30 `cat $temp/user_list_online.txt` 2> $temp/user.txt
 		result=$?
-		if [ $result -eq $ESC ]; then
-			echo "Esc." >&2
-			delete
-			exit 1
-		fi
+		Esc $result
 		if [ $result -eq $CANCLE ]; then
-			return
+			break
 		fi
 		User_action
 	done
+	return
 }
 User_action(){
-	LOCK=0
-	User=`cat $temp/user.txt | xargs -J % id -nu %`
-	sudo cat /etc/master.passwd | awk '{split($0, a, "$");print a[1]}' | awk '{split($0, a, ":");if($1 ~/.*LOCKED.*/)print a[1]" "aa[2]}' > $temp/Locked.txt
-	for lock in `cat $temp/Locked.txt`; do
-		if [ $User = $lock ]; then
-			LOCK=1
-			break
-		fi
-	done
 	while :
 	do
+		LOCK=0
+		User=`cat $temp/user.txt | xargs -J % id -nu %`
+		sudo cat /etc/master.passwd | awk '{split($0, a, "$");print a[1]}' | awk '{split($0, a, ":");if($1 ~/.*LOCKED.*/)print a[1]" "aa[2]}' > $temp/Locked.txt
+		for lock in `cat $temp/Locked.txt`; do
+			if [ $User = $lock ]; then
+				LOCK=1
+				break
+			fi
+		done
 		if [ $LOCK -eq 0 ]; then
 			dialog --title "" --ok-label "SELECT" --cancel-label "EXIT" --menu "User `cat $temp/user.txt | xargs -J % id -nu %`" 29 70 30 \
 			1 "LOCK IT" \
@@ -192,13 +167,9 @@ User_action(){
 			5 "SUDO LOG" 2> $temp/tmp_action.txt
 			result=$?
 		fi
-		if [ $result -eq $ESC ]; then
-			echo "Esc." >&2
-			delete
-			exit 1
-		fi
+		Esc $result
 		if [ $result -eq $CANCLE ]; then
-			return
+			break
 		fi
 		select=$(cat $temp/tmp_action.txt)
 		case $select in
@@ -208,15 +179,6 @@ User_action(){
 				elif [ $LOCK -eq 1 ]; then
 					UNLock
 				fi
-				LOCK=0
-				User=`cat $temp/user.txt | xargs -J % id -nu %`
-				sudo cat /etc/master.passwd | awk '{split($0, a, "$");print a[1]}' | awk '{split($0, a, ":");if($1 ~/.*LOCKED.*/)print a[1]" "aa[2]}' > $temp/Locked.txt
-				for lock in `cat $temp/Locked.txt`; do
-					if [ $User = $lock ]; then
-						LOCK=1
-						break
-					fi
-				done
 				;;
 			2)
 				Group 
@@ -232,52 +194,29 @@ User_action(){
 				;;
 		esac
 	done
+	return
 }
 Lock(){
-	while :
-	do
-		dialog --title "LOCK IT" --yesno "Are you sure you want to do this?" 29 70
+	dialog --title "LOCK IT" --yesno "Are you sure you want to do this?" 29 70
+	result=$?
+	Esc $result
+	if [ $result -eq $OK ]; then
+		sudo pw lock `cat $temp/user.txt`
+		dialog --title "LOCK IT" --msgbox "LOCK SUCCEED!" 29 70
 		result=$?
-		if [ $result -eq $ESC ]; then
-			echo "Esc." >&2
-			delete
-			exit 1
-		fi
-		if [ $result -eq $OK ]; then
-			sudo pw lock `cat $temp/user.txt`
-			dialog --title "LOCK IT" --msgbox "LOCK SUCCEED!" 29 70
-			result=$?
-			if [ $result -eq $ESC ]; then
-				echo "Esc." >&2
-				delete
-				exit 1
-			fi
-		fi
-		return
-	done
+		Esc $result
+	fi
 }
 UNLock(){
-	while :
-	do
-		dialog --title "UNLOCK IT" --yesno "Are you sure you want to do this?" 29 70
+	dialog --title "UNLOCK IT" --yesno "Are you sure you want to do this?" 29 70
+	result=$?
+	Esc $result
+	if [ $result -eq $OK ]; then
+		sudo pw unlock `cat $temp/user.txt`
+		dialog --title "UNLOCK IT" --msgbox "UNLOCK SUCCEED!" 29 70
 		result=$?
-		if [ $result -eq $ESC ]; then
-			echo "Esc." >&2
-			delete
-			exit 1
-		fi
-		if [ $result -eq $OK ]; then
-			sudo pw unlock `cat $temp/user.txt`
-			dialog --title "UNLOCK IT" --msgbox "UNLOCK SUCCEED!" 29 70
-			result=$?
-			if [ $result -eq $ESC ]; then
-				echo "Esc." >&2
-				delete
-				exit 1
-			fi
-		fi
-		return
-	done
+		Esc $result
+	fi
 }
 Group(){
 	groups `cat $temp/user.txt` > $temp/group_name.txt
@@ -300,29 +239,22 @@ Group(){
 	do
 		dialog --title "GROUP"  --exit-label "OK" --extra-button --extra-label "Export"  --textbox $temp/group_list.txt 29 70
 		result=$?
-		if [ $result -eq $ESC ]; then
-			echo "Esc." >&2
-			delete
-			exit 1
-		fi
+		Esc $result
 		if [ $result -eq $OK ]; then
-			return
+			break
 		elif [ $result -eq $ALL ]; then
 			cat $temp/group_list.txt > $temp/output.txt
 			File_Locate
 		fi
 	done
+	return
 }
 File_Locate(){
 	while :
 	do
 		dialog --title "Export to file" --inputbox "Enter the path:" 29 70 2> $temp/locate.txt
 		result=$?
-		if [ $result -eq $ESC ]; then
-			echo "Esc." >&2
-			delete
-			exit 1
-		fi
+		Esc $result
 		if [ $result -eq $OK ]; then
 			echo $HOME | awk '{printf("%s",$0)}' > $temp/dir.txt
 			if [ `cat $temp/locate.txt | cut -c1-1` = "~" ]; then
@@ -334,6 +266,8 @@ File_Locate(){
 			fail=$?
 			if [ $fail -ne 0 ]; then
 				dialog --title "Export to file" --msgbox "Fail! Error directory or file type." 29 70
+				result=$?
+				Esc $result
 			fi
 		fi
 		return
@@ -362,38 +296,24 @@ Port(){
 	done
 	test -s $temp/port_used.txt
 	file_no_data=$?
-	if [ $file_no_data -eq 1 ]; then
-		while :
-		do
-			dialog --title "Port INFO(PID and Port)" --msgbox "This user does not use any port now." 29 70
-			result=$?
-			if [ $result -eq $ESC ]; then
-				echo "Esc." >&2
-				delete
-				exit 1
-			fi
-			if [ $result -eq $OK ]; then
-				return
-			fi
-			return
-		done
+	if [ $file_no_data -ne 0 ]; then
+		dialog --title "Port INFO(PID and Port)" --msgbox "This user does not use any port now." 29 70
+		result=$?
+		Esc $result
+		return
 	fi
 	while :
 	do
-		
 		dialog --title "Port INFO(PID and Port)" --menu ""  -- 29 70 30 `cat $temp/port_used.txt` 2> $temp/port_select.txt
 		result=$?
-		if [ $result -eq $ESC ]; then
-			echo "Esc." >&2
-			delete
-			exit 1
-		fi
+		Esc $result
 		if [ $result -eq $OK ]; then
 			Process
 		elif [ $result -eq $CANCLE ]; then
-			return
+			break
 		fi
 	done
+	return
 }
 Process(){
 	ps -c -v -j `cat $temp/port_select.txt` | awk '{print $1" "$2" "$11" "$12" "$13" "$14" "$15}' > $temp/port_info.txt
@@ -414,55 +334,39 @@ Process(){
 	do
 		dialog --title "PROCESS STATE: `cat $temp/port_select.txt`"  --exit-label "OK" --extra-button --extra-label "Export"  --textbox $temp/port_data.txt 29 70
 		result=$?
-		if [ $result -eq $ESC ]; then
-			echo "Esc." >&2
-			delete
-			exit 1
-		fi
+		Esc $result
 		if [ $result -eq $OK ]; then
-			return
+			break
 		elif [ $result -eq $ALL ]; then
 			cat $temp/port_data.txt > $temp/output.txt
 			File_Locate
 		fi
 	done
+	return
 }
 Login(){
-	last -n 10 `cat $temp/user.txt | xargs -J % id -nu %` | awk '{if($0 ~/^$/)nextfile;else if($2 ~/ttyv0/)print $3" "$4" "$5" "$6;else print $4" "$5" "$6" "$7" "$3}' > $temp/login.txt
+	last `cat $temp/user.txt | xargs -J % id -nu %` | awk 'BEGIN{count=0}{if($0 ~/^$/)nextfile;if(count>10)nextfile;if($3 ~/.*\..*/)count++;if($3 ~/.*\..*/)if(count<11) print $4" "$5" "$6" "$7" "$3}' > $temp/login.txt
 	test -s $temp/login.txt
 	file_no_data=$?
-	if [ $file_no_data -eq 1 ]; then
-		while :
-		do
-			dialog --title "LOGIN HISTORY" --msgbox "There is no login history." 29 70
-			result=$?
-			if [ $result -eq $ESC ]; then
-				echo "Esc." >&2
-				delete
-				exit 1
-			fi
-			if [ $result -eq $OK ]; then
-				return
-			fi
-			return
-		done
+	if [ $file_no_data -ne 0 ]; then
+		dialog --title "LOGIN HISTORY" --msgbox "There is no login history with IP with this user." 29 70
+		result=$?
+		Esc $result
+		return
 	fi
 	while :
 	do
 		dialog --title "LOGIN HISTORY"  --exit-label "OK" --extra-button --extra-label "Export"  --textbox $temp/login.txt 29 70
 		result=$?
-		if [ $result -eq $ESC ]; then
-			echo "Esc." >&2
-			delete
-			exit 1
-		fi
+		Esc $result
 		if [ $result -eq $OK ]; then
-			return
+			break
 		elif [ $result -eq $ALL ]; then
 			cat $temp/login.txt > $temp/output.txt
 			File_Locate
 		fi
 	done
+	return
 }
 Sudo_log(){
 	cat $temp/user.txt | xargs -J % id -nu % | awk '{print "USER_TEMP "$0}'> $temp/sudo_log1.txt
@@ -499,40 +403,26 @@ Sudo_log(){
 	cat $temp/sudo_log1.txt | awk '{if($1~/USER_TEMP/)User=$2;else if($1==User)print}' > $temp/sudo_log.txt
 	test -s $temp/sudo_log.txt
 	file_no_data=$?
-	if [ $file_no_data -eq 1 ]; then
-		while :
-		do
-			dialog --title "SUDO LOG" --msgbox "This user did not use sudo in recent 30 days." 29 70
-			result=$?
-			if [ $result -eq $ESC ]; then
-				echo "Esc." >&2
-				delete
-				exit 1
-			fi
-			if [ $result -eq $OK ]; then
-				return
-			fi
-			return
-		done
+	if [ $file_no_data -ne 0 ]; then
+		dialog --title "SUDO LOG" --msgbox "This user did not use sudo in recent 30 days." 29 70
+		result=$?
+		Esc $result
+		return
 	fi
 	while :
 	do
 		dialog --title "SUDO LOG"  --exit-label "OK" --extra-button --extra-label "Export"  --textbox $temp/sudo_log.txt 29 70
 		result=$?
-		if [ $result -eq $ESC ]; then
-			echo "Esc." >&2
-			delete
-			exit 1
-		fi
+		Esc $result
 		if [ $result -eq $OK ]; then
-			return
+			break
 		elif [ $result -eq $ALL ]; then
 			cat $temp/sudo_log.txt > $temp/output.txt
 			File_Locate
 		fi
 	done
+	return
 }
-
 Entrance_Page
 echo "Exit." >&1
 delete
