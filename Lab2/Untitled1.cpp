@@ -1,3 +1,6 @@
+//Class: 1101 計算機系統管理 曾建超 曾亮齊
+//Author: 陳品劭 109550206
+//Date: 20211010
 #include <iostream>
 #include <fstream>
 #include <string>

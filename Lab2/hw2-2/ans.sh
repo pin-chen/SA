@@ -1,6 +1,9 @@
+# Class: 1101 計算機系統管理 曾建超 曾亮齊
+# Author: 陳品劭 109550206
+# Date: 20211010
 #!/usr/bin/env sh
 temp=`mktemp -d`
-OK=0
+OK=0  
 CANCLE=1
 ALL=3
 Broadcast=0
@@ -257,10 +260,11 @@ File_Locate(){
 		Esc $result
 		if [ $result -eq $OK ]; then
 			echo $HOME | awk '{printf("%s",$0)}' > $temp/dir.txt
-			if [ `cat $temp/locate.txt | cut -c1-1` = "~" ]; then
-				cat $temp/locate.txt | cut -c2- >> $temp/dir.txt
+			cat $temp/locate.txt | awk '{if($0~/.*//.*/);else print "~/"$0}' > $temp/path.txt
+			if [ `cat $temp/path.txt | cut -c1-1` = "~" ]; then
+				cat $temp/path.txt | cut -c2- >> $temp/dir.txt
 			else
-				cat $temp/locate.txt > $temp/dir.txt
+				cat $temp/locate.txt > $temp/dir.txt 
 			fi
 			cat $temp/output.txt > `cat $temp/dir.txt`
 			fail=$?
